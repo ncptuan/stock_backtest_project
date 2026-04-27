@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Backtest Project</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    /* ===== SessionListPanel ===== */
+    .session-list-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .session-list-panel {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      border-radius: 8px;
+      width: 680px;
+      max-width: 95vw;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      outline: none;
+    }
+
+    .session-list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #333;
+    }
+
+    .session-list-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .session-list-close {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+    }
+
+    .session-list-close:hover { color: #fff; }
+
+    .session-list-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 20px;
+    }
+
+    .session-list-footer {
+      padding: 12px 20px;
+      border-top: 1px solid #333;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Session rows */
+    .session-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+
+    .session-row:hover { background: rgba(255,255,255,0.04); }
+
+    .session-row--current {
+      background: color-mix(in srgb, currentColor 15%, transparent);
+      border-left: 3px solid #4a9eff;
+      padding-left: 9px;
+    }
+
+    .session-row-info {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .session-symbol { font-weight: 600; color: #fff; }
+    .session-timeframe { color: #aaa; font-size: 0.9rem; }
+    .session-date { color: #888; font-size: 0.85rem; }
+
+    .session-badge {
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(74,158,255,0.2);
+      color: #4a9eff;
+    }
+
+    .session-exported-badge {
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    /* Skeleton loader */
+    .session-row.skeleton {
+      pointer-events: none;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #2a2a3e 25%, #3a3a5e 50%, #2a2a3e 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    .skeleton-line.wide { width: 60%; margin-bottom: 6px; }
+    .skeleton-line.narrow { width: 30%; }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Empty / error states */
+    .session-list-empty, .session-list-error {
+      padding: 24px;
+      text-align: center;
+      color: #888;
+    }
+
+    .session-list-error { color: #f08080; }
+    .error-icon { font-size: 1.5rem; display: block; margin-bottom: 8px; }
+    .text-muted { color: #666; font-size: 0.85rem; }
+
+    /* Buttons */
+    .btn-primary {
+      background: #4a9eff;
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .btn-primary:hover { background: #3a8eef; }
+
+    .btn-secondary {
+      background: #2a2a3e;
+      color: #ccc;
+      border: 1px solid #444;
+      padding: 6px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .btn-secondary:hover { background: #3a3a5e; }
+
+    .btn-ghost {
+      background: none;
+      color: #888;
+      border: 1px solid #555;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-left: 6px;
+    }
+
+    .btn-ghost:hover { color: #ccc; border-color: #888; }
+
+    /* ===== CompletionOverlay ===== */
+    .completion-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .completion-overlay-panel {
+      background: #1a1a2e;
+      border-radius: 8px;
+      padding: 28px 32px;
+      text-align: center;
+      color: #e0e0e0;
+    }
+
+    .completion-overlay-panel h3 { margin: 0 0 16px; font-size: 1.2rem; }
+    .completion-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* ===== StatusBar ===== */
+    .statusbar-state.complete { color: #5cb85c; font-weight: 600; }
+    .statusbar-export-link {
+      margin-left: 12px;
+      color: #4a9eff;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .statusbar-export-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <p>Loading...</p>
+  <script>window.__SUPABASE_ENABLED__ = {{ supabase_enabled }};</script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

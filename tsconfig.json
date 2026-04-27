@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": false,
+    "noImplicitAny": true,
+    "outDir": "./static",
+    "rootDir": "./frontend",
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "lib": ["ES2020", "DOM"]
+  },
+  "include": ["frontend/**/*"],
+  "exclude": ["node_modules", "static"]
+}

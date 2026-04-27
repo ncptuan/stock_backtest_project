@@ -1,0 +1,28 @@
+[project]
+name = "stock_backtest_project"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi==0.135.3",
+    "uvicorn[standard]",
+    "pyarrow==24.0.0",
+    "ccxt==4.5.48",
+    "python-dotenv",
+    "pydantic-settings",
+    "httpx",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+asyncio_mode = "auto"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

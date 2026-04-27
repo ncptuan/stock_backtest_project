@@ -1,0 +1,19 @@
+{
+  "name": "stock_backtest_project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild frontend/main.ts --bundle --outfile=static/app.js --sourcemap",
+    "build:prod": "esbuild frontend/main.ts --bundle --outfile=static/app.js --minify",
+    "watch": "esbuild frontend/main.ts --bundle --outfile=static/app.js --watch --sourcemap",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch"
+  },
+  "dependencies": {
+    "lightweight-charts": "^5.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.0",
+    "esbuild": "^0.28.0"
+  }
+}
