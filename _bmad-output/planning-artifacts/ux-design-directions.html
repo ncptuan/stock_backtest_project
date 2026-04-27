@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UX Design Directions — stock_backtest_project</title>
+<style>
+  /* ===== DESIGN TOKENS (from Step 6 & 8) ===== */
+  :root {
+    --prim-gray-900: #0d1117;
+    --prim-gray-800: #161b22;
+    --prim-gray-700: #21262d;
+    --prim-gray-600: #30363d;
+    --prim-gray-400: #8b949e;
+    --prim-gray-200: #e6edf3;
+    --prim-yellow-300: #e3b341;
+    --prim-yellow-500: #d29922;
+    --prim-blue-500: #2f81f7;
+    --prim-green-500: #3fb950;
+    --prim-red-500: #f85149;
+
+    --font-data: 'Fira Code', 'Consolas', ui-monospace, monospace;
+    --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0d12;
+    color: var(--prim-gray-200);
+    font-family: var(--font-ui);
+    font-size: 13px;
+  }
+
+  /* ===== SHOWCASE SHELL ===== */
+  .showcase-header {
+    background: var(--prim-gray-800);
+    border-bottom: 1px solid var(--prim-gray-600);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .showcase-header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--prim-gray-200);
+  }
+  .showcase-header span {
+    font-size: 11px;
+    color: var(--prim-gray-400);
+    font-family: var(--font-data);
+  }
+  .tab-nav {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  .tab-btn {
+    background: none;
+    border: 1px solid var(--prim-gray-600);
+    color: var(--prim-gray-400);
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { border-color: var(--prim-gray-400); color: var(--prim-gray-200); }
+  .tab-btn.active {
+    background: var(--prim-blue-500);
+    border-color: var(--prim-blue-500);
+    color: #fff;
+  }
+
+  .direction-section { display: none; padding: 24px; }
+  .direction-section.active { display: block; }
+
+  .direction-label {
+    font-size: 11px;
+    color: var(--prim-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .direction-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--prim-gray-200);
+    margin-bottom: 4px;
+  }
+  .direction-desc {
+    font-size: 12px;
+    color: var(--prim-gray-400);
+    margin-bottom: 20px;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+
+  /* ===== MOCKUP FRAME ===== */
+  .mockup-frame {
+    border: 1px solid var(--prim-gray-600);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--prim-gray-900);
+    margin-bottom: 24px;
+  }
+  .mockup-chrome {
+    background: var(--prim-gray-800);
+    border-bottom: 1px solid var(--prim-gray-600);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chrome-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .chrome-dot.red { background: #f85149; opacity: 0.6; }
+  .chrome-dot.yellow { background: #d29922; opacity: 0.6; }
+  .chrome-dot.green { background: #3fb950; opacity: 0.6; }
+  .chrome-url {
+    margin-left: 12px;
+    background: var(--prim-gray-700);
+    border-radius: 4px;
+    padding: 3px 12px;
+    font-size: 11px;
+    color: var(--prim-gray-400);
+    font-family: var(--font-data);
+    flex: 1;
+    max-width: 300px;
+  }
+
+  /* ===== APP SHELL ===== */
+  .app { display: flex; flex-direction: column; height: 540px; }
+
+  /* Fingerprint Bar */
+  .fingerprint-bar {
+    background: var(--prim-gray-800);
+    border-bottom: 1px solid var(--prim-gray-600);
+    height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+    font-size: 11px;
+    font-family: var(--font-data);
+    color: var(--prim-gray-400);
+    flex-shrink: 0;
+  }
+  .fingerprint-bar .tag {
+    color: var(--prim-gray-200);
+    font-weight: 500;
+  }
+  .fingerprint-bar .entry-val { color: var(--prim-blue-500); }
+  .fingerprint-bar .tp-val { color: var(--prim-green-500); }
+  .fingerprint-bar .sl-val { color: var(--prim-red-500); }
+  .fingerprint-bar .expand-hint {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--prim-gray-600);
+  }
+
+  /* Toolbar */
+  .toolbar {
+    background: var(--prim-gray-800);
+    border-bottom: 1px solid var(--prim-gray-600);
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 8px;
+    border-right: 1px solid var(--prim-gray-700);
+  }
+  .toolbar-group:last-child { border-right: none; margin-left: auto; }
+  .tb-btn {
+    background: none;
+    border: none;
+    color: var(--prim-gray-400);
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    font-family: var(--font-ui);
+    transition: all 0.1s;
+  }
+  .tb-btn:hover { background: var(--prim-gray-700); color: var(--prim-gray-200); }
+  .tb-btn.active { background: var(--prim-blue-500)20; color: var(--prim-blue-500); }
+  .tb-btn.entry-btn.active { color: var(--prim-blue-500); border: 1px solid var(--prim-blue-500)40; }
+  .tb-btn.tp-btn { color: var(--prim-green-500); opacity: 0.7; }
+  .tb-btn.sl-btn { color: var(--prim-red-500); opacity: 0.7; }
+  .tb-sep { width: 1px; height: 20px; background: var(--prim-gray-700); margin: 0 4px; }
+  .symbol-select {
+    background: var(--prim-gray-700);
+    border: 1px solid var(--prim-gray-600);
+    color: var(--prim-gray-200);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: var(--font-data);
+    font-weight: 500;
+  }
+  .timeframe-group { gap: 2px; }
+  .tf-btn {
+    background: none;
+    border: none;
+    color: var(--prim-gray-400);
+    padding: 4px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font-data);
+  }
+  .tf-btn.active { background: var(--prim-gray-700); color: var(--prim-gray-200); }
+
+  /* Replay controls */
+  .replay-group { gap: 6px; }
+  .replay-btn {
+    background: var(--prim-gray-700);
+    border: 1px solid var(--prim-gray-600);
+    color: var(--prim-gray-200);
+    padding: 0;
+    width: 32px; height: 32px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.1s;
+  }
+  .replay-btn.play { background: var(--prim-blue-500); border-color: var(--prim-blue-500); color: #fff; width: 72px; font-size: 11px; font-family: var(--font-ui); gap: 4px; }
+  .replay-btn:hover { border-color: var(--prim-gray-400); }
+  .speed-btn {
+    background: none;
+    border: none;
+    color: var(--prim-gray-400);
+    padding: 4px 6px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: var(--font-data);
+    border-radius: 3px;
+  }
+  .speed-btn.active { color: var(--prim-yellow-300); background: var(--prim-gray-700); }
+
+  /* Main content area */
+  .main-content { display: flex; flex: 1; overflow: hidden; }
+
+  /* Chart area */
+  .chart-area {
+    flex: 1;
+    background: var(--prim-gray-900);
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-canvas {
+    width: 100%; height: 100%;
+    position: relative;
+  }
+
+  /* Fake chart SVG */
+  .chart-svg { width: 100%; height: 100%; }
+
+  /* Entry/TP/SL lines */
+  .price-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    display: flex;
+    align-items: center;
+  }
+  .price-line.entry { background: var(--prim-blue-500); top: 35%; }
+  .price-line.tp { background: var(--prim-green-500); top: 22%; border-style: dashed; border-width: 0 0 1px 0; border-color: var(--prim-green-500); background: none; }
+  .price-line.sl { top: 55%; border-style: dotted; border-width: 0 0 1px 0; border-color: var(--prim-red-500); background: none; }
+  .price-label {
+    position: absolute;
+    right: 0;
+    background: var(--prim-gray-800);
+    border: 1px solid;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-family: var(--font-data);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    transform: translateY(-50%);
+  }
+  .price-label.entry { color: var(--prim-blue-500); border-color: var(--prim-blue-500); top: 35%; }
+  .price-label.tp { color: var(--prim-green-500); border-color: var(--prim-green-500); top: 22%; }
+  .price-label.sl { color: var(--prim-red-500); border-color: var(--prim-red-500); top: 55%; }
+
+  /* Trade markers */
+  .trade-marker {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .trade-marker.t1 { background: var(--prim-blue-500); }
+  .trade-marker.t2 { background: var(--prim-green-500); }
+  .trade-marker.t3 { background: var(--prim-red-500); }
+
+  /* Candles (fake) */
+  .candles {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    right: 60px;
+    height: 200px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+  }
+  .candle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 12px;
+    position: relative;
+  }
+  .candle-wick { width: 1px; background: currentColor; }
+  .candle-body { width: 100%; border-radius: 1px; min-height: 3px; }
+  .candle.bull { color: var(--prim-green-500); }
+  .candle.bull .candle-body { background: var(--prim-green-500); }
+  .candle.bear { color: var(--prim-red-500); }
+  .candle.bear .candle-body { background: none; border: 1.5px solid var(--prim-red-500); }
+
+  /* Volume area */
+  .volume-area {
+    position: absolute;
+    bottom: 0;
+    left: 20px; right: 60px;
+    height: 60px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    opacity: 0.3;
+  }
+  .vol-bar { flex: 1; max-width: 12px; border-radius: 1px 1px 0 0; }
+  .vol-bar.bull { background: var(--prim-green-500); }
+  .vol-bar.bear { background: var(--prim-red-500); }
+
+  /* Results Panel */
+  .results-panel {
+    width: 30%;
+    min-width: 240px;
+    max-width: 380px;
+    background: var(--prim-gray-800);
+    border-left: 1px solid var(--prim-gray-600);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .panel-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--prim-gray-700);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-title { font-size: 11px; font-weight: 600; color: var(--prim-gray-400); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel-badge {
+    background: var(--prim-gray-700);
+    color: var(--prim-gray-400);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-family: var(--font-data);
+  }
+  .summary-row {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--prim-gray-700);
+    display: flex;
+    gap: 16px;
+  }
+  .stat-item { flex: 1; }
+  .stat-label { font-size: 10px; color: var(--prim-gray-400); margin-bottom: 2px; }
+  .stat-value { font-size: 13px; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+  .stat-value.positive { color: var(--prim-green-500); }
+  .stat-value.negative { color: var(--prim-red-500); }
+  .stat-value.neutral { color: var(--prim-gray-200); }
+
+  .trade-table { flex: 1; overflow-y: auto; }
+  .table-header {
+    display: grid;
+    grid-template-columns: 24px 1fr 1fr 1fr 72px;
+    padding: 4px 12px;
+    font-size: 10px;
+    color: var(--prim-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--prim-gray-700);
+    background: var(--prim-gray-800);
+    position: sticky; top: 0;
+  }
+  .table-row {
+    display: grid;
+    grid-template-columns: 24px 1fr 1fr 1fr 72px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-family: var(--font-data);
+    font-variant-numeric: tabular-nums;
+    border-bottom: 1px solid var(--prim-gray-700)60;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .table-row:hover { background: var(--prim-gray-700)60; }
+  .table-row.win { }
+  .table-row.loss { background: var(--prim-red-500)08; }
+  .table-row.loss:hover { background: var(--prim-red-500)15; }
+  .table-row.highlighted { background: var(--prim-blue-500)15; border-left: 2px solid var(--prim-blue-500); }
+  .col-num { color: var(--prim-gray-400); }
+  .col-entry { color: var(--prim-gray-200); }
+  .col-exit { color: var(--prim-gray-200); }
+  .col-type { }
+  .col-type.tp { color: var(--prim-green-500); }
+  .col-type.sl { color: var(--prim-red-500); }
+  .col-pnl.win { color: var(--prim-green-500); }
+  .col-pnl.loss { color: var(--prim-red-500); }
+
+  /* Status Bar */
+  .status-bar {
+    background: var(--prim-gray-800);
+    border-top: 1px solid var(--prim-gray-600);
+    height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+  .mode-text {
+    font-weight: 600;
+    font-family: var(--font-data);
+    font-size: 11px;
+  }
+  .mode-text.setup { color: var(--prim-yellow-300); }
+  .mode-text.replay { color: var(--prim-green-500); }
+  .mode-text.complete { color: var(--prim-gray-400); }
+  .status-hint { color: var(--prim-gray-400); }
+  .status-hint .key {
+    background: var(--prim-gray-700);
+    border: 1px solid var(--prim-gray-600);
+    padding: 0 4px;
+    border-radius: 3px;
+    font-family: var(--font-data);
+    font-size: 10px;
+  }
+  .preflight {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+  }
+  .pf-item { display: flex; align-items: center; gap: 4px; }
+  .pf-item.ok { color: var(--prim-green-500); }
+  .pf-item.warn { color: var(--prim-yellow-500); }
+  .pf-item.ok::before { content: '✓'; }
+  .pf-item.warn::before { content: '⚠'; }
+
+  /* Direction B — Focus Mode specifics */
+  .chart-overlay-panel {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 320px;
+    background: var(--prim-gray-800)f0;
+    backdrop-filter: blur(8px);
+    border-left: 1px solid var(--prim-gray-600);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+  }
+  .panel-toggle {
+    position: absolute;
+    top: 50%;
+    right: 320px;
+    transform: translateY(-50%);
+    background: var(--prim-gray-700);
+    border: 1px solid var(--prim-gray-600);
+    border-right: none;
+    color: var(--prim-gray-400);
+    padding: 8px 4px;
+    border-radius: 4px 0 0 4px;
+    cursor: pointer;
+    font-size: 10px;
+    writing-mode: vertical-rl;
+    z-index: 11;
+  }
+
+  /* Direction D — Bottom Panel */
+  .bottom-results {
+    height: 180px;
+    background: var(--prim-gray-800);
+    border-top: 1px solid var(--prim-gray-600);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .bottom-panel-header {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--prim-gray-700);
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .bottom-table-wrap { overflow-x: auto; flex: 1; }
+  .bottom-table {
+    display: grid;
+    min-width: 500px;
+  }
+  .bottom-table .table-header,
+  .bottom-table .table-row {
+    grid-template-columns: 28px 80px 80px 80px 80px 80px 1fr;
+  }
+
+  /* Comparison section */
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .comparison-item {
+    background: var(--prim-gray-800);
+    border: 1px solid var(--prim-gray-600);
+    border-radius: 6px;
+    padding: 16px;
+  }
+  .comparison-item h3 {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--prim-gray-200);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .comparison-item h3 .badge {
+    background: var(--prim-blue-500)20;
+    color: var(--prim-blue-500);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 400;
+  }
+  .pro-con-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .pro-con-list li { font-size: 12px; color: var(--prim-gray-400); display: flex; align-items: flex-start; gap: 6px; line-height: 1.4; }
+  .pro-con-list li.pro::before { content: '✓'; color: var(--prim-green-500); flex-shrink: 0; }
+  .pro-con-list li.con::before { content: '✗'; color: var(--prim-red-500); flex-shrink: 0; }
+  .pro-con-list li.note::before { content: '→'; color: var(--prim-yellow-300); flex-shrink: 0; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--prim-gray-900); }
+  ::-webkit-scrollbar-thumb { background: var(--prim-gray-600); border-radius: 3px; }
+
+  /* Tooltip demo */
+  .tooltip-demo {
+    position: absolute;
+    background: var(--prim-gray-700);
+    border: 1px solid var(--prim-gray-600);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-family: var(--font-data);
+    font-variant-numeric: tabular-nums;
+    z-index: 20;
+    line-height: 1.8;
+    pointer-events: none;
+  }
+  .tooltip-demo .t-row { display: flex; gap: 12px; }
+  .tooltip-demo .t-label { color: var(--prim-gray-400); min-width: 14px; }
+  .tooltip-demo .t-val { color: var(--prim-gray-200); }
+
+  /* Toast demo */
+  .toast-demo {
+    position: absolute;
+    bottom: 48px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--prim-gray-700);
+    border: 1px solid var(--prim-gray-600);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+    z-index: 30;
+    box-shadow: 0 4px 16px #00000060;
+  }
+  .toast-demo .undo-btn {
+    color: var(--prim-blue-500);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 11px;
+    padding: 2px 6px;
+    border: 1px solid var(--prim-blue-500)40;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="showcase-header">
+  <div>
+    <div class="direction-label" style="margin-bottom:2px">stock_backtest_project</div>
+    <h1>UX Design Directions — Visual Bar Replay Tool</h1>
+  </div>
+  <span>Dựa trên UX Design Spec Steps 1–8</span>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showDir('a')">A — Terminal Classic</button>
+    <button class="tab-btn" onclick="showDir('b')">B — Focus Mode</button>
+    <button class="tab-btn" onclick="showDir('c')">C — Balanced Split</button>
+    <button class="tab-btn" onclick="showDir('d')">D — Bottom Panel</button>
+    <button class="tab-btn" onclick="showDir('compare')">So sánh</button>
+  </div>
+</div>
+
+<!-- ============================
+     DIRECTION A — Terminal Classic
+     ============================-->
+<div id="dir-a" class="direction-section active">
+  <div class="direction-label">Direction A</div>
+  <div class="direction-title">Terminal Classic</div>
+  <div class="direction-desc">Chart full-width trái, Results panel cố định bên phải (30%, max 380px). Bloomberg/TradingView-inspired. Mọi thứ visible cùng lúc — không cần toggle. Dense, professional.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-chrome">
+      <div class="chrome-dot red"></div>
+      <div class="chrome-dot yellow"></div>
+      <div class="chrome-dot green"></div>
+      <div class="chrome-url">localhost:8080</div>
+    </div>
+    <div class="app">
+      <!-- Fingerprint Bar -->
+      <div class="fingerprint-bar">
+        <span class="tag">SESSION #12</span>
+        <span>BTC/USDT</span>
+        <span class="tag">4h</span>
+        <span>2024-01-01 → 2024-12-31</span>
+        <span>Entry: <span class="entry-val">68,500</span></span>
+        <span>TP: <span class="tp-val">71,000</span></span>
+        <span>SL: <span class="sl-val">67,800</span></span>
+        <span class="expand-hint">hover to expand ▾</span>
+      </div>
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <div class="symbol-select">BTC/USDT</div>
+        </div>
+        <div class="toolbar-group timeframe-group">
+          <button class="tf-btn">1h</button>
+          <button class="tf-btn active">4h</button>
+          <button class="tf-btn">1d</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb-btn entry-btn active">─ Entry</button>
+          <button class="tb-btn tp-btn">─ TP</button>
+          <button class="tb-btn sl-btn">─ SL</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb-btn">Vol</button>
+        </div>
+        <div class="toolbar-group replay-group">
+          <button class="replay-btn" title="Step back">◀</button>
+          <button class="replay-btn play">▶ Play</button>
+          <button class="replay-btn" title="Step forward">▶</button>
+          <button class="replay-btn" title="Reset" style="color:var(--prim-gray-400)">↺</button>
+          <button class="speed-btn">1×</button>
+          <button class="speed-btn active">2×</button>
+          <button class="speed-btn">5×</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb-btn">Export CSV</button>
+          <button class="tb-btn" style="color:var(--prim-gray-400)">?</button>
+        </div>
+      </div>
+      <!-- Main -->
+      <div class="main-content" style="flex:1; overflow:hidden">
+        <!-- Chart -->
+        <div class="chart-area">
+          <!-- Candles -->
+          <div class="candles">
+            <div class="candle bear"><div class="candle-wick" style="height:14px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:22px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:30px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:12px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:38px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:20px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:16px"></div><div class="candle-body" style="height:24px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:16px"></div><div class="candle-wick" style="height:12px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:14px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:28px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:32px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:20px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:42px"></div><div class="candle-wick" style="height:14px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:14px"></div><div class="candle-body" style="height:16px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:24px"></div><div class="candle-wick" style="height:10px"></div></div>
+          </div>
+          <!-- Volume -->
+          <div class="volume-area">
+            <div class="vol-bar bear" style="height:18px"></div>
+            <div class="vol-bar bull" style="height:24px"></div>
+            <div class="vol-bar bull" style="height:32px"></div>
+            <div class="vol-bar bear" style="height:14px"></div>
+            <div class="vol-bar bull" style="height:48px"></div>
+            <div class="vol-bar bull" style="height:22px"></div>
+            <div class="vol-bar bear" style="height:28px"></div>
+            <div class="vol-bar bull" style="height:16px"></div>
+            <div class="vol-bar bear" style="height:12px"></div>
+            <div class="vol-bar bull" style="height:36px"></div>
+            <div class="vol-bar bull" style="height:28px"></div>
+            <div class="vol-bar bear" style="height:20px"></div>
+            <div class="vol-bar bull" style="height:18px"></div>
+            <div class="vol-bar bull" style="height:54px"></div>
+            <div class="vol-bar bear" style="height:16px"></div>
+            <div class="vol-bar bull" style="height:22px"></div>
+          </div>
+          <!-- Price lines -->
+          <div class="price-line entry"></div>
+          <div class="price-line tp"></div>
+          <div class="price-line sl"></div>
+          <div class="price-label entry">Entry 68,500</div>
+          <div class="price-label tp">TP 71,000</div>
+          <div class="price-label sl">SL 67,800</div>
+          <!-- Trade markers -->
+          <div class="trade-marker t1" style="left:28%;top:35%">T1</div>
+          <div class="trade-marker t2" style="left:52%;top:22%">T2</div>
+          <div class="trade-marker t3" style="left:40%;top:55%">T3</div>
+          <!-- OHLCV Tooltip -->
+          <div class="tooltip-demo" style="left:34%;top:18%">
+            <div class="t-row"><span class="t-label">O</span><span class="t-val" style="color:var(--prim-gray-200)">68,420</span></div>
+            <div class="t-row"><span class="t-label">H</span><span class="t-val" style="color:var(--prim-green-500)">69,150</span></div>
+            <div class="t-row"><span class="t-label">L</span><span class="t-val" style="color:var(--prim-red-500)">67,980</span></div>
+            <div class="t-row"><span class="t-label">C</span><span class="t-val" style="color:var(--prim-gray-200)">68,720</span></div>
+            <div class="t-row" style="margin-top:4px"><span class="t-label" style="font-size:10px;color:var(--prim-gray-400)">2024-03-14 16:00</span></div>
+          </div>
+        </div>
+        <!-- Results Panel -->
+        <div class="results-panel">
+          <div class="panel-header">
+            <span class="panel-title">Kết quả</span>
+            <span class="panel-badge">8 lệnh</span>
+            <span class="panel-badge" style="color:var(--prim-green-500);background:var(--prim-green-500)15">62.5%</span>
+          </div>
+          <div class="summary-row">
+            <div class="stat-item"><div class="stat-label">Win Rate</div><div class="stat-value positive">62.5%</div></div>
+            <div class="stat-item"><div class="stat-label">P&L Net</div><div class="stat-value positive">+$1,248</div></div>
+            <div class="stat-item"><div class="stat-label">Avg R:R</div><div class="stat-value neutral">1:1.8</div></div>
+          </div>
+          <div class="trade-table">
+            <div class="table-header"><span>#</span><span>Entry</span><span>Exit</span><span>Type</span><span>P&L Net</span></div>
+            <div class="table-row win highlighted"><span class="col-num">1</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+            <div class="table-row loss"><span class="col-num">2</span><span class="col-entry">68,500</span><span class="col-exit">67,800</span><span class="col-type sl">SL</span><span class="col-pnl loss">-$186</span></div>
+            <div class="table-row win"><span class="col-num">3</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+            <div class="table-row win"><span class="col-num">4</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+            <div class="table-row loss"><span class="col-num">5</span><span class="col-entry">68,500</span><span class="col-exit">67,800</span><span class="col-type sl">SL</span><span class="col-pnl loss">-$186</span></div>
+            <div class="table-row win"><span class="col-num">6</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+            <div class="table-row loss"><span class="col-num">7</span><span class="col-entry">68,500</span><span class="col-exit">67,800</span><span class="col-type sl">SL</span><span class="col-pnl loss">-$186</span></div>
+            <div class="table-row win"><span class="col-num">8</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <span class="mode-text setup">SETUP MODE</span>
+        <span class="status-hint">Click chart để vẽ &nbsp;|&nbsp; <span class="key">Space</span> replay &nbsp;|&nbsp; <span class="key">?</span> shortcuts</span>
+        <div class="preflight">
+          <span class="pf-item ok" style="font-family:var(--font-data);font-size:11px"> Entry</span>
+          <span class="pf-item ok" style="font-family:var(--font-data);font-size:11px"> TP</span>
+          <span class="pf-item ok" style="font-family:var(--font-data);font-size:11px"> SL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     DIRECTION B — Focus Mode
+     ============================-->
+<div id="dir-b" class="direction-section">
+  <div class="direction-label">Direction B</div>
+  <div class="direction-title">Focus Mode</div>
+  <div class="direction-desc">Chart full-width tối đa (~85%). Results panel là overlay từ phải, triggered khi Replay complete. Trong Setup/Replay — chỉ thấy chart. Sau khi xong — panel slide in. Maximize immersion.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-chrome">
+      <div class="chrome-dot red"></div>
+      <div class="chrome-dot yellow"></div>
+      <div class="chrome-dot green"></div>
+      <div class="chrome-url">localhost:8080</div>
+    </div>
+    <div class="app">
+      <div class="fingerprint-bar">
+        <span class="tag">SESSION #12</span>
+        <span>BTC/USDT</span>
+        <span class="tag">4h</span>
+        <span>2024-01-01 → 2024-12-31</span>
+        <span>Entry: <span class="entry-val">68,500</span></span>
+        <span>TP: <span class="tp-val">71,000</span></span>
+        <span>SL: <span class="sl-val">67,800</span></span>
+        <span class="expand-hint">hover ▾</span>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <div class="symbol-select">BTC/USDT</div>
+        </div>
+        <div class="toolbar-group timeframe-group">
+          <button class="tf-btn">1h</button>
+          <button class="tf-btn active">4h</button>
+          <button class="tf-btn">1d</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb-btn entry-btn active">─ Entry</button>
+          <button class="tb-btn tp-btn">─ TP</button>
+          <button class="tb-btn sl-btn">─ SL</button>
+        </div>
+        <div class="toolbar-group replay-group">
+          <button class="replay-btn" >◀</button>
+          <button class="replay-btn play" style="background:var(--prim-green-500);border-color:var(--prim-green-500)">⏸ Pause</button>
+          <button class="replay-btn">▶</button>
+          <button class="replay-btn">↺</button>
+          <button class="speed-btn">1×</button>
+          <button class="speed-btn active">2×</button>
+          <button class="speed-btn">5×</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb-btn">?</button>
+        </div>
+      </div>
+      <!-- Main: full chart + overlay panel -->
+      <div class="main-content" style="flex:1;overflow:hidden;position:relative">
+        <div class="chart-area" style="width:100%">
+          <div class="candles">
+            <div class="candle bear"><div class="candle-wick" style="height:14px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:22px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:30px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:12px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:38px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:20px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:16px"></div><div class="candle-body" style="height:24px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:16px"></div><div class="candle-wick" style="height:12px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:14px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:28px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:32px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:20px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:42px"></div><div class="candle-wick" style="height:14px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:14px"></div><div class="candle-body" style="height:16px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:24px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:36px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:26px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:44px"></div><div class="candle-wick" style="height:12px"></div></div>
+          </div>
+          <div class="volume-area" style="right:320px">
+            <div class="vol-bar bear" style="height:18px"></div>
+            <div class="vol-bar bull" style="height:24px"></div>
+            <div class="vol-bar bull" style="height:32px"></div>
+            <div class="vol-bar bear" style="height:14px"></div>
+            <div class="vol-bar bull" style="height:48px"></div>
+            <div class="vol-bar bull" style="height:22px"></div>
+            <div class="vol-bar bear" style="height:28px"></div>
+            <div class="vol-bar bull" style="height:16px"></div>
+            <div class="vol-bar bear" style="height:12px"></div>
+            <div class="vol-bar bull" style="height:36px"></div>
+            <div class="vol-bar bull" style="height:28px"></div>
+            <div class="vol-bar bear" style="height:20px"></div>
+            <div class="vol-bar bull" style="height:18px"></div>
+            <div class="vol-bar bull" style="height:54px"></div>
+            <div class="vol-bar bear" style="height:16px"></div>
+            <div class="vol-bar bull" style="height:22px"></div>
+            <div class="vol-bar bull" style="height:30px"></div>
+            <div class="vol-bar bear" style="height:14px"></div>
+            <div class="vol-bar bull" style="height:26px"></div>
+            <div class="vol-bar bull" style="height:38px"></div>
+          </div>
+          <div class="price-line entry" style="right:320px"></div>
+          <div class="price-line tp" style="right:320px"></div>
+          <div class="price-line sl" style="right:320px"></div>
+          <div class="price-label entry">Entry 68,500</div>
+          <div class="price-label tp">TP 71,000</div>
+          <div class="price-label sl" style="right:320px; position:absolute; top:55%; transform:translateY(-50%)">SL 67,800</div>
+          <div class="trade-marker t1" style="left:25%;top:35%">T1</div>
+          <div class="trade-marker t2" style="left:45%;top:22%">T2</div>
+          <div class="trade-marker t3" style="left:36%;top:55%">T3</div>
+          <!-- Panel toggle handle -->
+          <div class="panel-toggle">Results ◀</div>
+          <!-- Overlay panel -->
+          <div class="chart-overlay-panel">
+            <div class="panel-header">
+              <span class="panel-title">Kết quả</span>
+              <span class="panel-badge">8 lệnh</span>
+              <span class="panel-badge" style="color:var(--prim-green-500);background:var(--prim-green-500)15">62.5%</span>
+            </div>
+            <div class="summary-row">
+              <div class="stat-item"><div class="stat-label">Win Rate</div><div class="stat-value positive">62.5%</div></div>
+              <div class="stat-item"><div class="stat-label">P&L Net</div><div class="stat-value positive">+$1,248</div></div>
+              <div class="stat-item"><div class="stat-label">R:R</div><div class="stat-value neutral">1:1.8</div></div>
+            </div>
+            <div class="trade-table">
+              <div class="table-header"><span>#</span><span>Entry</span><span>Exit</span><span>Type</span><span>P&L</span></div>
+              <div class="table-row win highlighted"><span class="col-num">1</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+              <div class="table-row loss"><span class="col-num">2</span><span class="col-entry">68,500</span><span class="col-exit">67,800</span><span class="col-type sl">SL</span><span class="col-pnl loss">-$186</span></div>
+              <div class="table-row win"><span class="col-num">3</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+              <div class="table-row win"><span class="col-num">4</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+              <div class="table-row loss"><span class="col-num">5</span><span class="col-entry">68,500</span><span class="col-exit">67,800</span><span class="col-type sl">SL</span><span class="col-pnl loss">-$186</span></div>
+              <div class="table-row win"><span class="col-num">6</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <span class="mode-text replay">REPLAY ACTIVE</span>
+        <span class="status-hint"><span class="key">Space</span> pause &nbsp;|&nbsp; <span class="key">1</span><span class="key">2</span><span class="key">3</span> speed &nbsp;|&nbsp; <span class="key">←→</span> step</span>
+        <div class="preflight" style="color:var(--prim-gray-400);font-size:11px;font-family:var(--font-data)">
+          Bar 142/365
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     DIRECTION C — Balanced Split
+     ============================-->
+<div id="dir-c" class="direction-section">
+  <div class="direction-label">Direction C</div>
+  <div class="direction-title">Balanced Split</div>
+  <div class="direction-desc">Chart và Results panel luôn visible, split 70/30 với resize handle ở giữa. Results panel có tabs: Overview / Per-Trade / Export. TradingView-inspired split layout. Phù hợp với màn hình rộng.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-chrome">
+      <div class="chrome-dot red"></div>
+      <div class="chrome-dot yellow"></div>
+      <div class="chrome-dot green"></div>
+      <div class="chrome-url">localhost:8080</div>
+    </div>
+    <div class="app">
+      <div class="fingerprint-bar">
+        <span class="tag">SESSION #12</span>
+        <span>BTC/USDT</span>
+        <span class="tag">4h</span>
+        <span>2024-01-01 → 2024-12-31</span>
+        <span>Entry: <span class="entry-val">68,500</span></span>
+        <span>TP: <span class="tp-val">71,000</span></span>
+        <span>SL: <span class="sl-val">67,800</span></span>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <div class="symbol-select">BTC/USDT</div>
+        </div>
+        <div class="toolbar-group timeframe-group">
+          <button class="tf-btn">1h</button>
+          <button class="tf-btn active">4h</button>
+          <button class="tf-btn">1d</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb-btn entry-btn active">─ Entry</button>
+          <button class="tb-btn tp-btn">─ TP</button>
+          <button class="tb-btn sl-btn">─ SL</button>
+        </div>
+        <div class="toolbar-group replay-group">
+          <button class="replay-btn">◀</button>
+          <button class="replay-btn play">▶ Play</button>
+          <button class="replay-btn">▶</button>
+          <button class="replay-btn">↺</button>
+          <button class="speed-btn">1×</button>
+          <button class="speed-btn active">2×</button>
+          <button class="speed-btn">5×</button>
+        </div>
+        <div class="toolbar-group"><button class="tb-btn">Export</button><button class="tb-btn">?</button></div>
+      </div>
+      <div class="main-content" style="flex:1;overflow:hidden">
+        <div class="chart-area">
+          <div class="candles">
+            <div class="candle bear"><div class="candle-wick" style="height:14px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:22px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:30px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:12px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:38px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:20px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:16px"></div><div class="candle-body" style="height:24px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:16px"></div><div class="candle-wick" style="height:12px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:14px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:28px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:32px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:20px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:8px"></div></div>
+          </div>
+          <div class="volume-area">
+            <div class="vol-bar bear" style="height:18px"></div>
+            <div class="vol-bar bull" style="height:24px"></div>
+            <div class="vol-bar bull" style="height:32px"></div>
+            <div class="vol-bar bear" style="height:14px"></div>
+            <div class="vol-bar bull" style="height:48px"></div>
+            <div class="vol-bar bull" style="height:22px"></div>
+            <div class="vol-bar bear" style="height:28px"></div>
+            <div class="vol-bar bull" style="height:16px"></div>
+            <div class="vol-bar bear" style="height:12px"></div>
+            <div class="vol-bar bull" style="height:36px"></div>
+            <div class="vol-bar bull" style="height:28px"></div>
+            <div class="vol-bar bear" style="height:20px"></div>
+            <div class="vol-bar bull" style="height:18px"></div>
+          </div>
+          <div class="price-line entry"></div>
+          <div class="price-line tp"></div>
+          <div class="price-line sl"></div>
+          <div class="price-label entry">Entry 68,500</div>
+          <div class="price-label tp">TP 71,000</div>
+          <div class="price-label sl">SL 67,800</div>
+          <div class="trade-marker t1" style="left:28%;top:35%">T1</div>
+          <div class="trade-marker t2" style="left:52%;top:22%">T2</div>
+        </div>
+        <!-- Results panel with tabs -->
+        <div class="results-panel">
+          <!-- Panel tabs -->
+          <div style="display:flex;border-bottom:1px solid var(--prim-gray-600);background:var(--prim-gray-800)">
+            <button style="flex:1;background:none;border:none;border-bottom:2px solid var(--prim-blue-500);color:var(--prim-gray-200);padding:8px;font-size:11px;cursor:pointer;font-family:var(--font-ui)">Overview</button>
+            <button style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:var(--prim-gray-400);padding:8px;font-size:11px;cursor:pointer;font-family:var(--font-ui)">Per-Trade</button>
+            <button style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:var(--prim-gray-400);padding:8px;font-size:11px;cursor:pointer;font-family:var(--font-ui)">Export</button>
+          </div>
+          <div class="summary-row" style="flex-wrap:wrap;gap:8px">
+            <div class="stat-item"><div class="stat-label">Sessions</div><div class="stat-value neutral">#12</div></div>
+            <div class="stat-item"><div class="stat-label">Win Rate</div><div class="stat-value positive">62.5%</div></div>
+            <div class="stat-item"><div class="stat-label">P&L Net</div><div class="stat-value positive">+$1,248</div></div>
+          </div>
+          <div class="summary-row">
+            <div class="stat-item"><div class="stat-label">Avg R:R</div><div class="stat-value neutral">1:1.8</div></div>
+            <div class="stat-item"><div class="stat-label">Lệnh</div><div class="stat-value neutral">8</div></div>
+            <div class="stat-item"><div class="stat-label">Commission</div><div class="stat-value negative">-$32</div></div>
+          </div>
+          <div class="trade-table">
+            <div class="table-header"><span>#</span><span>Entry</span><span>Exit</span><span>Type</span><span>P&L Net</span></div>
+            <div class="table-row win highlighted"><span class="col-num">1</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+            <div class="table-row loss"><span class="col-num">2</span><span class="col-entry">68,500</span><span class="col-exit">67,800</span><span class="col-type sl">SL</span><span class="col-pnl loss">-$186</span></div>
+            <div class="table-row win"><span class="col-num">3</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+            <div class="table-row win"><span class="col-num">4</span><span class="col-entry">68,500</span><span class="col-exit">71,000</span><span class="col-type tp">TP</span><span class="col-pnl win">+$312</span></div>
+            <div class="table-row loss"><span class="col-num">5</span><span class="col-entry">68,500</span><span class="col-exit">67,800</span><span class="col-type sl">SL</span><span class="col-pnl loss">-$186</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Resize handle -->
+      <div style="position:absolute;right:30%;top:76px;bottom:32px;width:4px;background:var(--prim-gray-600);cursor:col-resize;z-index:5;display:flex;align-items:center;justify-content:center">
+        <div style="width:2px;height:32px;background:var(--prim-gray-400);border-radius:1px;opacity:0.5"></div>
+      </div>
+      <div class="status-bar">
+        <span class="mode-text setup">SETUP MODE</span>
+        <span class="status-hint">Click chart để vẽ &nbsp;|&nbsp; <span class="key">Space</span> replay</span>
+        <div class="preflight">
+          <span class="pf-item ok" style="font-family:var(--font-data);font-size:11px"> Entry</span>
+          <span class="pf-item ok" style="font-family:var(--font-data);font-size:11px"> TP</span>
+          <span class="pf-item warn" style="font-family:var(--font-data);font-size:11px;color:var(--prim-yellow-500)"> SL chưa set</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     DIRECTION D — Bottom Panel
+     ============================-->
+<div id="dir-d" class="direction-section">
+  <div class="direction-label">Direction D</div>
+  <div class="direction-title">Bottom Panel</div>
+  <div class="direction-desc">Chart full-width, Results panel nằm dưới (bottom drawer, ~180px). Chart maximize hoàn toàn trong Setup/Replay. Sau replay complete — bottom panel auto-expand. Phù hợp với màn hình dọc/laptop nhỏ.</div>
+
+  <div class="mockup-frame">
+    <div class="mockup-chrome">
+      <div class="chrome-dot red"></div>
+      <div class="chrome-dot yellow"></div>
+      <div class="chrome-dot green"></div>
+      <div class="chrome-url">localhost:8080</div>
+    </div>
+    <div class="app">
+      <div class="fingerprint-bar">
+        <span class="tag">SESSION #12</span>
+        <span>BTC/USDT <span class="tag">4h</span></span>
+        <span>2024-01-01 → 2024-12-31</span>
+        <span>Entry: <span class="entry-val">68,500</span></span>
+        <span>TP: <span class="tp-val">71,000</span></span>
+        <span>SL: <span class="sl-val">67,800</span></span>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <div class="symbol-select">BTC/USDT</div>
+        </div>
+        <div class="toolbar-group timeframe-group">
+          <button class="tf-btn">1h</button>
+          <button class="tf-btn active">4h</button>
+          <button class="tf-btn">1d</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tb-btn entry-btn active">─ Entry</button>
+          <button class="tb-btn tp-btn">─ TP</button>
+          <button class="tb-btn sl-btn">─ SL</button>
+        </div>
+        <div class="toolbar-group replay-group">
+          <button class="replay-btn">◀</button>
+          <button class="replay-btn play" style="background:var(--prim-green-500);border-color:var(--prim-green-500)">⏸ Pause</button>
+          <button class="replay-btn">▶</button>
+          <button class="replay-btn">↺</button>
+          <button class="speed-btn">1×</button>
+          <button class="speed-btn active">2×</button>
+          <button class="speed-btn">5×</button>
+        </div>
+        <div class="toolbar-group"><button class="tb-btn">Export</button></div>
+      </div>
+      <!-- Chart — full width -->
+      <div style="flex:1;overflow:hidden;position:relative">
+        <div class="chart-area" style="height:100%">
+          <div class="candles" style="right:40px">
+            <div class="candle bear"><div class="candle-wick" style="height:14px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:22px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:30px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:12px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:38px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:20px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:16px"></div><div class="candle-body" style="height:24px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:16px"></div><div class="candle-wick" style="height:12px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:14px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:28px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:32px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:20px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:42px"></div><div class="candle-wick" style="height:14px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:14px"></div><div class="candle-body" style="height:16px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:24px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:36px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:12px"></div><div class="candle-body" style="height:18px"></div><div class="candle-wick" style="height:6px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:26px"></div><div class="candle-wick" style="height:10px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:6px"></div><div class="candle-body" style="height:44px"></div><div class="candle-wick" style="height:12px"></div></div>
+            <div class="candle bear"><div class="candle-wick" style="height:10px"></div><div class="candle-body" style="height:22px"></div><div class="candle-wick" style="height:8px"></div></div>
+            <div class="candle bull"><div class="candle-wick" style="height:8px"></div><div class="candle-body" style="height:30px"></div><div class="candle-wick" style="height:10px"></div></div>
+          </div>
+          <div class="price-line entry"></div>
+          <div class="price-line tp"></div>
+          <div class="price-line sl"></div>
+          <div class="price-label entry">Entry 68,500</div>
+          <div class="price-label tp">TP 71,000</div>
+          <div class="price-label sl">SL 67,800</div>
+          <div class="trade-marker t1" style="left:32%;top:35%">T1</div>
+          <div class="trade-marker t2" style="left:58%;top:22%">T2</div>
+          <div class="trade-marker t3" style="left:48%;top:55%">T3</div>
+          <!-- Completion summary overlay -->
+          <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:var(--prim-gray-700);border:1px solid var(--prim-gray-600);border-radius:6px;padding:10px 20px;display:flex;align-items:center;gap:20px;white-space:nowrap;box-shadow:0 4px 20px #00000080;z-index:20">
+            <span style="font-size:11px;color:var(--prim-gray-400);font-family:var(--font-data)">Session #12 — 8 lệnh</span>
+            <span style="font-size:13px;color:var(--prim-green-500);font-family:var(--font-data);font-weight:500">62.5% <span style="font-size:10px;color:var(--prim-gray-400)">(↑ vs #11: 45%)</span></span>
+            <button style="background:var(--prim-gray-700);border:1px solid var(--prim-gray-600);color:var(--prim-gray-200);padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font-ui)">↺ Reset & Adjust</button>
+            <button style="background:none;border:1px solid var(--prim-gray-600);color:var(--prim-gray-400);padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font-ui)">Export CSV</button>
+          </div>
+        </div>
+      </div>
+      <!-- Bottom results panel -->
+      <div class="bottom-results">
+        <div class="bottom-panel-header">
+          <span class="panel-title">Kết quả</span>
+          <div style="display:flex;gap:16px;margin-left:16px">
+            <span style="font-family:var(--font-data);font-size:11px;color:var(--prim-green-500)">Win: 5</span>
+            <span style="font-family:var(--font-data);font-size:11px;color:var(--prim-red-500)">Loss: 3</span>
+            <span style="font-family:var(--font-data);font-size:11px;color:var(--prim-green-500)">+$1,248 net</span>
+          </div>
+          <button style="margin-left:auto;background:none;border:none;color:var(--prim-gray-400);font-size:11px;cursor:pointer;font-family:var(--font-ui)">▼ Thu gọn</button>
+        </div>
+        <div class="bottom-table-wrap">
+          <div class="bottom-table">
+            <div class="table-header" style="grid-template-columns:28px 80px 80px 80px 80px 80px 1fr"><span>#</span><span>Entry</span><span>Exit</span><span>Type</span><span>P&L Gross</span><span>Commission</span><span>P&L Net</span></div>
+            <div class="table-row highlighted" style="grid-template-columns:28px 80px 80px 80px 80px 80px 1fr"><span>1</span><span style="color:var(--prim-gray-200);font-family:var(--font-data)">68,500</span><span style="color:var(--prim-gray-200);font-family:var(--font-data)">71,000</span><span style="color:var(--prim-green-500);font-family:var(--font-data)">TP</span><span style="color:var(--prim-green-500);font-family:var(--font-data)">+$320</span><span style="color:var(--prim-red-500);font-family:var(--font-data)">-$8</span><span style="color:var(--prim-green-500);font-family:var(--font-data)">+$312</span></div>
+            <div class="table-row loss" style="grid-template-columns:28px 80px 80px 80px 80px 80px 1fr"><span>2</span><span style="color:var(--prim-gray-200);font-family:var(--font-data)">68,500</span><span style="color:var(--prim-gray-200);font-family:var(--font-data)">67,800</span><span style="color:var(--prim-red-500);font-family:var(--font-data)">SL</span><span style="color:var(--prim-red-500);font-family:var(--font-data)">-$178</span><span style="color:var(--prim-red-500);font-family:var(--font-data)">-$8</span><span style="color:var(--prim-red-500);font-family:var(--font-data)">-$186</span></div>
+            <div class="table-row" style="grid-template-columns:28px 80px 80px 80px 80px 80px 1fr"><span>3</span><span style="color:var(--prim-gray-200);font-family:var(--font-data)">68,500</span><span style="color:var(--prim-gray-200);font-family:var(--font-data)">71,000</span><span style="color:var(--prim-green-500);font-family:var(--font-data)">TP</span><span style="color:var(--prim-green-500);font-family:var(--font-data)">+$320</span><span style="color:var(--prim-red-500);font-family:var(--font-data)">-$8</span><span style="color:var(--prim-green-500);font-family:var(--font-data)">+$312</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="status-bar">
+        <span class="mode-text complete">REPLAY COMPLETE</span>
+        <span class="status-hint" style="color:var(--prim-gray-400)">8 lệnh xử lý · 365 bars</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     COMPARISON
+     ============================-->
+<div id="dir-compare" class="direction-section">
+  <div class="direction-label">So sánh</div>
+  <div class="direction-title">4 Directions — Đánh giá</div>
+  <div class="direction-desc">So sánh các tradeoff để chọn direction hoặc kết hợp elements. Câu hỏi quyết định: bạn muốn thấy results trong khi replay đang chạy không?</div>
+
+  <div class="comparison-grid">
+    <div class="comparison-item">
+      <h3>A — Terminal Classic <span class="badge">Recommended</span></h3>
+      <ul class="pro-con-list">
+        <li class="pro">Results panel luôn visible — xem live update trong replay</li>
+        <li class="pro">Closest to Bloomberg/TradingView mental model</li>
+        <li class="pro">Không cần toggle hay interaction để xem results</li>
+        <li class="pro">Resize handle cho trader tự điều chỉnh</li>
+        <li class="con">Chart bị compress ~70% — ít không gian hơn</li>
+        <li class="note">Phù hợp nhất với "live scoring feeling" emotional goal</li>
+      </ul>
+    </div>
+    <div class="comparison-item">
+      <h3>B — Focus Mode</h3>
+      <ul class="pro-con-list">
+        <li class="pro">Chart 100% width — maximum immersion khi replay</li>
+        <li class="pro">Overlay không push chart — không có layout shift</li>
+        <li class="con">Results hidden trong Setup/Replay — không thấy live update</li>
+        <li class="con">Overlay che một phần chart khi visible</li>
+        <li class="con">Toggle interaction thêm cognitive load</li>
+        <li class="note">Phù hợp nếu trader chỉ muốn xem chart, đọc results sau</li>
+      </ul>
+    </div>
+    <div class="comparison-item">
+      <h3>C — Balanced Split</h3>
+      <ul class="pro-con-list">
+        <li class="pro">Tabs (Overview/Per-Trade/Export) tổ chức tốt hơn</li>
+        <li class="pro">Resize handle rõ ràng nhất</li>
+        <li class="pro">Phù hợp màn hình rộng (27" monitor)</li>
+        <li class="con">Panel tabs thêm complexity — MVP không cần</li>
+        <li class="con">Nhiều UI elements hơn cần thiết</li>
+        <li class="note">Có thể adopt tab idea cho Phase 2</li>
+      </ul>
+    </div>
+    <div class="comparison-item">
+      <h3>D — Bottom Panel</h3>
+      <ul class="pro-con-list">
+        <li class="pro">Chart full width — tốt nhất cho laptop nhỏ (13")</li>
+        <li class="pro">Gross/Commission/Net visible trong table — audit trail rõ</li>
+        <li class="pro">Completion summary overlay trên chart elegant</li>
+        <li class="con">Linked selection chart ↔ table khó implement (khác axis)</li>
+        <li class="con">Marker → table scroll phức tạp hơn với horizontal layout</li>
+        <li class="note">Bottom panel gross/commission detail có thể adopt vào A</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;background:var(--prim-gray-800);border:1px solid var(--prim-gray-600);border-radius:6px;padding:16px 20px">
+    <div style="font-size:12px;font-weight:600;color:var(--prim-gray-200);margin-bottom:12px">Recommendation: Direction A với elements từ D</div>
+    <div style="font-size:12px;color:var(--prim-gray-400);line-height:1.8">
+      <b style="color:var(--prim-gray-200)">Base:</b> Direction A (Terminal Classic) — results panel luôn visible, live update trong replay, resize handle.<br>
+      <b style="color:var(--prim-gray-200)">Borrow từ D:</b> Per-trade table có cột Gross / Commission / Net (thay vì chỉ Net) — audit trail đầy đủ hơn.<br>
+      <b style="color:var(--prim-gray-200)">Borrow từ D:</b> Completion summary overlay trên chart sau replay complete — inline, không blocking.<br>
+      <b style="color:var(--prim-gray-200)">Borrow từ C:</b> Resize handle visual rõ ràng hơn giữa chart và panel.
+    </div>
+  </div>
+</div>
+
+<script>
+function showDir(id) {
+  document.querySelectorAll('.direction-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('dir-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

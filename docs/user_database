@@ -1,0 +1,86 @@
+-- =============================================================================
+-- Supabase tables for stock_quant_tracker
+-- Chạy script này trong Supabase Console → SQL Editor
+-- CRITICAL: Disable RLS sau khi tạo tables — anon key cần write access
+-- =============================================================================
+
+-- Table 1: signal_comparisons
+CREATE TABLE IF NOT EXISTS signal_comparisons (
+  id bigint generated always as identity primary key,
+  timestamp bigint not null,
+  signal_id text not null unique,
+  type text not null,
+  bot_verdict text not null,
+  claude_verdict text,
+  claude_methodology text,
+  invalidation_condition text,
+  result text not null default 'pending',
+  follow text,
+  note text default '',
+  telegram_sent boolean not null default false,
+  created_at timestamptz default now()
+);
+
+-- Table 2: cost_log
+-- timestamp không unique vì 2 calls cùng ms là có thể xảy ra
+CREATE TABLE IF NOT EXISTS cost_log (
+  id bigint generated always as identity primary key,
+  timestamp bigint not null,
+  model text not null,
+  input_tokens integer not null,
+  output_tokens integer not null,
+  cost_usd numeric(10,8) not null,
+  created_at timestamptz default now()
+);
+
+-- Table 3: claude_conversation_history
+CREATE TABLE IF NOT EXISTS claude_conversation_history (
+  id bigint generated always as identity primary key,
+  role text not null,
+  content text not null,
+  created_at timestamptz default now()
+);
+
+-- Table 4: budget_alert_state — single row
+CREATE TABLE IF NOT EXISTS budget_alert_state (
+  id integer primary key default 1,
+  alert_month text,
+  sent_at bigint,
+  constraint single_row check (id = 1)
+);
+
+-- CRITICAL: Disable RLS cho tất cả tables
+-- Supabase tạo mới có RLS on mặc định — anon key bị 403 Forbidden nếu quên disable
+ALTER TABLE signal_comparisons DISABLE ROW LEVEL SECURITY;
+ALTER TABLE cost_log DISABLE ROW LEVEL SECURITY;
+ALTER TABLE claude_conversation_history DISABLE ROW LEVEL SECURITY;
+ALTER TABLE budget_alert_state DISABLE ROW LEVEL SECURITY;
+
+-- =============================================================================
+-- Table 5: signal_cases — Phase 3 feedback loop & learning memory
+-- NOTE: RLS ENABLED — phải dùng service role key (không dùng anon key)
+-- Khác với các tables trên, signal_cases giữ RLS enabled để bảo vệ dữ liệu trading
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS signal_cases (
+  signal_id             TEXT PRIMARY KEY,
+  signal_sent_at        TIMESTAMPTZ NOT NULL,
+  market_regime         TEXT NOT NULL,
+  setup_type            TEXT,
+  claude_action         TEXT NOT NULL,
+  bot_action            TEXT NOT NULL,
+  claude_confidence     NUMERIC(5,2),
+  bot_score             NUMERIC(5,2),
+  outcome               TEXT,
+  follow                TEXT,
+  quality_rating        SMALLINT CHECK (quality_rating BETWEEN 1 AND 5),
+  reasoning_summary     TEXT NOT NULL,
+  invalidation_condition TEXT NOT NULL,
+  metadata              JSONB,
+  created_at            TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_signal_cases_market_regime
+  ON signal_cases(market_regime);
+
+-- signal_cases giữ RLS ENABLED — chỉ service role key có write access
+-- KHÔNG add: ALTER TABLE signal_cases DISABLE ROW LEVEL SECURITY
