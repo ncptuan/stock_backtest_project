@@ -1,5 +1,5 @@
 # generated: 2026-04-27
-# last_updated: 2026-04-27
+# last_updated: 2026-05-03
 # project: stock_backtest_project
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-27
-last_updated: 2026-04-27  # updated by code review
+last_updated: 2026-05-03  # updated by dev + review (p1-5-3, p1-5-4, p1-5-5, p1-6-1, p1-6-2)
 
 project_key: NOKEY
 tracking_system: file-system
@@ -71,3 +71,55 @@ development_status:
   4-2-pytest-unit-tests-cho-critical-paths: done
   4-3-credentials-validation-va-env-example: done
   epic-4-retrospective: optional
+
+  # Phase 1 — Visual Bar Replay Tool
+  # Epic P1-1: Backend Data Pipeline — Fetch, Cache, OHLCV API
+  epic-p1-1: done
+  p1-1-1-get-api-ohlcv-serve-ohlcv-tu-parquet-cache: done
+  p1-1-2-post-api-fetch-async-binance-fetch-voi-sse-progress: done
+  p1-1-3-atomic-parquet-write-va-cache-management: done
+  p1-1-4-post-api-fetch-refresh-data-va-job-management: done
+  p1-1-5-data-gap-detection-va-clip-notification: done
+  epic-p1-1-retrospective: optional
+
+  # Epic P1-2: Chart UI + Toolbar
+  epic-p1-2: in-progress
+  p1-2-1-candlestick-chart-render-voi-lightweight-charts: done
+  p1-2-2-timeframe-selector-va-date-range-picker: done
+  p1-2-3-ohlcv-hover-tooltip: done
+  p1-2-4-ma-ema-overlay-toggle: done
+  p1-2-5-volume-bars-toggle: done
+  epic-p1-2-retrospective: optional
+
+  # Epic P1-3: Drawing Tools (Entry/TP/SL Lines)
+  epic-p1-3: in-progress
+  p1-3-1-entry-tp-sl-line-drawing-voi-price-snap: done
+  p1-3-2-drag-to-move-va-delete-line: done
+  p1-3-3-price-label-va-mau-phan-biet: done
+  p1-3-4-rr-ratio-live-khi-drag: done
+  p1-3-5-toast-undo-khi-switch-timeframe: done
+  epic-p1-3-retrospective: optional
+
+  # Epic P1-4: Bar Replay Engine
+  epic-p1-4: in-progress
+  p1-4-1-play-pause-replay-engine: done
+  p1-4-2-3-toc-do-slow-normal-fast: done
+  p1-4-3-reset-giu-drawings: done
+  p1-4-4-pre-flight-checklist: done
+  p1-4-5-keyboard-shortcuts: done
+  epic-p1-4-retrospective: optional
+
+  # Epic P1-5: Hit Detection, Trade Execution + Results
+  epic-p1-5: in-progress
+  p1-5-1-hit-detection-engine-entry-tp-sl-logic: done
+  p1-5-2-pnl-calculation-va-commission: done
+  p1-5-3-visual-trade-markers-tren-chart: done
+  p1-5-4-per-trade-results-panel-realtime-update: done
+  p1-5-5-session-summary-va-sample-size-warnings: done
+  epic-p1-5-retrospective: optional
+
+  # Epic P1-6: Onboarding, UX Polish + Settings Persistence
+  epic-p1-6: done
+  p1-6-1-empty-state-va-getting-started-guide: done
+  p1-6-2-last-used-settings-persistence-localstorage: done
+  epic-p1-6-retrospective: optional

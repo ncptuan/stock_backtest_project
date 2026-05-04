@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -6,12 +7,20 @@ from fastapi.responses import HTMLResponse
 
 from backend.settings import settings
 
+_logger = logging.getLogger(__name__)
+
 _INDEX_HTML = Path(__file__).parent.parent / 'static' / 'index.html'
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: cache_dir đã được tạo bởi settings.model_post_init
+    # Startup: cleanup stale .tmp files từ crash/kill trước đó (Gap 2)
+    try:
+        for tmp_file in settings.cache_dir.glob("*.parquet.tmp"):
+            tmp_file.unlink(missing_ok=True)
+            _logger.warning("Cleaned up stale temp file: %s", tmp_file.name)
+    except (OSError, FileNotFoundError):
+        pass
     yield
     # Shutdown: nothing to clean up yet
 

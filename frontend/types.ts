@@ -3,26 +3,35 @@
 // Phase 2 events (flat names per Epic 1 Story 1.2 spec — không namespace)
 export interface EventMap {
     // Phase 1 events
+    'chart:ready': {};
+    'chart:dataLoaded': { barCount: number; bars: OHLCVBar[] };
+    'chart:loadError': { message: string };
     'replay:barAdvanced': { barIndex: number; timestamp: number };
     'replay:tradeHit': { type: 'entry' | 'tp' | 'sl'; price: number; barIndex: number };
     'drawing:lineChanged': { type: 'entry' | 'tp' | 'sl'; price: number };
+    'drawing:cleared': Record<string, never>;
     'session:reset': Record<string, never>;
+    'session:rebuilt': Record<string, never>;
 
     // Phase 2 events — ExportPanel listens to these
     replayStateChanged: { state: 'playing' | 'paused' | 'stopped' };
     tradeCompleted: TradeCompletedPayload;
 }
 
-// Phase 2 trade payload — 8 fields required by Epic 1 AC
+// Phase 2 trade payload — 9 fields required by Epic 1 AC + P1-5.2
 export interface TradeCompletedPayload {
     bar_index: number;           // bar index khi trade CLOSE (exit bar)
+    entry_bar_index: number;     // bar index khi trade OPEN (entry bar)
     entry_timestamp_ms: number;  // Unix ms UTC của entry candle (ADR-03)
     direction: 'LONG' | 'SHORT';
     entry_price: number;
     tp_price: number;
     sl_price: number;
+    actual_exit_price: number;   // actual fill price (may differ from TP/SL on gap/auto-close)
     result: 'win' | 'loss';
+    close_reason: 'tp' | 'sl' | 'auto';  // how the trade was closed
     bars_to_exit: number;        // exit_bar_index - entry_bar_index
+    pnl_percent: number;         // P&L % with commission (P1-5.2)
 }
 
 // Shared types (used by EventMap payloads and components)
@@ -33,6 +42,51 @@ export interface OHLCVBar {
     low: number;
     close: number;
     volume: number;
+    ema_20: number | null;
+    ma_20: number | null;
+}
+
+export interface GapInfo {
+    start_ts: number;
+    end_ts: number;
+    missing_bars: number;
+}
+
+export interface OHLCVApiResponse {
+    data: OHLCVBar[] | null;
+    clipped?: boolean;
+    actual_date_start?: string | null;
+    actual_date_end?: string | null;
+    has_gaps?: boolean;
+    gaps?: GapInfo[];
+    error?: {
+        message: string;
+        code: string;
+        retryable: boolean;
+    } | null;
+}
+
+export interface DateRange {
+    dateStart: string;
+    dateEnd: string;
+}
+
+export interface PersistedSettings {
+    timeframe: string;
+    dateStart: string;
+    dateEnd: string;
+    drawings?: {
+        entry: number | null;
+        tp: number | null;
+        sl: number | null;
+    };
+}
+
+export interface LoadDataResult {
+    barCount: number;
+    clipped: boolean;
+    actualDateStart: string | null;
+    actualDateEnd: string | null;
 }
 
 export interface LineSnapshot {
@@ -125,4 +179,17 @@ export interface ExportSuccessData {
     signal_cases_count: number;
     first_signal_id: string;    // "backtest_20260426_breakout_4h_00042"
     supabase_url: string;       // Link to verify in Supabase dashboard
+}
+
+// --- Phase 1: Drawing types (Epic P1-3) ---
+
+export type LineType = 'entry' | 'tp' | 'sl';
+
+export interface DrawingLine {
+    type: LineType;
+    price: number;
+}
+
+export interface DrawingSnapshot {
+    lines: Map<LineType, DrawingLine | null>;
 }

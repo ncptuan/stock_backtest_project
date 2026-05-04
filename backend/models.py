@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Annotated, Generic, Literal, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 T = TypeVar("T")
 
@@ -12,12 +13,64 @@ class OHLCVBar(BaseModel):
     low: float
     close: float
     volume: float
+    ema_20: float | None = None
+    ma_20: float | None = None
+
+
+class OHLCVResponse(BaseModel):
+    data: list[OHLCVBar]
+    clipped: bool = False
+    actual_date_start: str | None = None
+    actual_date_end: str | None = None
+    has_gaps: bool = False
+    gaps: list[dict] = []
 
 
 class ErrorResponse(BaseModel):
     message: str
     code: str        # "FETCH_FAILED", "CACHE_CORRUPT", etc.
     retryable: bool
+
+
+# ─── Phase 1: Fetch endpoint models ─────────────────────────────────────────
+
+class FetchRequest(BaseModel):
+    symbol: str
+    timeframe: str
+    date_start: str
+    date_end: str = ""
+    mode: Literal["full", "refresh"] = "full"
+
+    @model_validator(mode="after")
+    def validate_dates(self) -> "FetchRequest":
+        fmt = "%Y-%m-%d"
+        try:
+            start = datetime.strptime(self.date_start, fmt)
+        except ValueError:
+            raise ValueError(f"date_start phải có format YYYY-MM-DD, nhận: {self.date_start!r}")
+        # For refresh mode, date_end defaults to today if not provided
+        if self.mode == "refresh" and not self.date_end:
+            self.date_end = datetime.utcnow().strftime(fmt)
+        try:
+            end = datetime.strptime(self.date_end, fmt)
+        except ValueError:
+            raise ValueError(f"date_end phải có format YYYY-MM-DD, nhận: {self.date_end!r}")
+        if start > end:
+            raise ValueError(f"date_start ({self.date_start}) phải <= date_end ({self.date_end})")
+        return self
+
+
+class FetchJobResponse(BaseModel):
+    job_id: str
+
+
+class FetchStatusResponse(BaseModel):
+    job_id: str
+    status: Literal["running", "done", "error"]
+    percent: int
+    status_text: str
+    error: str | None = None
+    rows: int | None = None
 
 
 class APIResponse(BaseModel, Generic[T]):
